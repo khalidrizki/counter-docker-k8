@@ -1,0 +1,13 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+#count {
+    font-size: 64px;
+}
+
+button {
+    font-size: 24px;
+    padding: 10px 30px;
+}
