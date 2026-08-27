@@ -3,17 +3,27 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/jackc/pgx/v5"
 )
 
 func main() {
 
+	dbURL := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s",
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_NAME"),
+	)
 	conn, err := pgx.Connect(
 		context.Background(),
-		"postgres://postgres:postgres@postgres:5432/counterdb",
+		dbURL,
 	)
 
 	if err != nil {
