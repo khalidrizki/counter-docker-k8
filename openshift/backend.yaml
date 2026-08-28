@@ -14,7 +14,7 @@ spec:
     spec: 
       containers: 
         - name: backend
-          image: ...
+          image: image-registry.openshift-image-registry.svc:5000/counter-app/backend:latest
           ports: 
             - containerPort: 8080
 
