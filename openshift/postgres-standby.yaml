@@ -48,6 +48,14 @@ data:
 
     fi
 
+    echo "Permission sebelum PostgreSQL:"
+    ls -ld "$PGDATA"
+
+    chmod 700 "$PGDATA"
+
+    echo "Permission setelah chmod:"
+    ls -ld "$PGDATA"
+
     echo "Menjalankan PostgreSQL sebagai Standby..."
 
     exec postgres \
