@@ -14,7 +14,7 @@ spec:
     spec: 
       containers: 
         - name: nginx
-          image: image-registry.openshift-image-registry.svc:5000/counter-app/nginx:latest
+          image: image-registry.openshift-image-registry.svc:5000/counter-demo/nginx:latest
           ports: 
             - containerPort: 8080
 ---
