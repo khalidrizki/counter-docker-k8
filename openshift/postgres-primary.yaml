@@ -33,6 +33,52 @@ data:
     EOSQL
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-primary-rebuild
+data:
+  rebuild-standby.sh: |
+    #!/bin/bash
+    set -e
+
+    if [ ! -f "$PGDATA/PG_VERSION" ]; then
+
+      echo "=== Rebuild postgres-primary sebagai Standby ==="
+
+      echo "Mengosongkan PGDATA..."
+      rm -rf "$PGDATA"/*
+
+      export PGPASSWORD="$REPLICATION_PASSWORD"
+
+      echo "Mengambil base backup dari Primary baru..."
+
+      until pg_basebackup \
+        -h postgres-standby \
+        -p 5432 \
+        -U "$REPLICATION_USER" \
+        -D "$PGDATA" \
+        -Fp \
+        -Xs \
+        -P \
+        -R
+      do
+        echo "Primary baru belum siap. Coba lagi dalam 5 detik..."
+        sleep 5
+      done
+
+      echo "Base backup selesai."
+
+    fi
+
+    chmod 700 "$PGDATA"
+
+    echo "Menjalankan PostgreSQL sebagai Standby..."
+
+    exec postgres \
+      -D "$PGDATA" \
+      -c hot_standby=on
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-primary-pvc
@@ -81,6 +127,10 @@ spec:
           ports:
             - containerPort: 5432
 
+          command:
+          - /bin/bash
+          - /scripts/rebuild-standby.sh
+
           env:
 
             - name: POSTGRES_USER
@@ -116,18 +166,6 @@ spec:
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
 
-          args:
-            - "-c"
-            - "wal_level=replica"
-
-            - "-c"
-            - "max_wal_senders=10"
-
-            - "-c"
-            - "max_replication_slots=10"
-
-            - "-c"
-            - "hba_file=/etc/postgresql/pg_hba.conf"
 
           volumeMounts:
 
@@ -140,11 +178,15 @@ spec:
             - name: postgres-init
               mountPath: /docker-entrypoint-initdb.d
 
+            - name: postgres-primary-rebuild
+              mountPath: /scripts
+
       volumes:
 
         - name: postgres-primary-storage
           persistentVolumeClaim:
-            claimName: postgres-primary-pvc
+            #claimName: postgres-primary-pvc
+            claimName: postgres-primary-rebuild-pvc
 
         - name: postgres-primary-config
           configMap:
@@ -153,4 +195,9 @@ spec:
         - name: postgres-init
           configMap:
             name: postgres-init
+            defaultMode: 0755
+        
+        - name: postgres-primary-rebuild
+          configMap:
+            name: postgres-primary-rebuild
             defaultMode: 0755
