@@ -19,7 +19,7 @@ func main() {
 	}
 	pool, err := pgxpool.New(
 		context.Background(),
-		os.Getenv("DATABASE_URL"),
+		dbURL,
 	)
 
 	if err != nil {
