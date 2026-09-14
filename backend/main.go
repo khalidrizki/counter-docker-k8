@@ -88,6 +88,7 @@ func main() {
 		).Scan(&count)
 
 		if err != nil {
+			log.Printf("GET database error: %v", err)
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
 		}
