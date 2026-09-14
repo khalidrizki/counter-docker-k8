@@ -19,7 +19,7 @@ spec:
             - containerPort: 8080
 
           env: 
-            - name: DB_URL
+            - name: DATABASE_URL
               valueFrom: 
                 secretKeyRef: 
                   name: cnpg-ha-app
