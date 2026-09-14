@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -17,20 +17,25 @@ func main() {
 	if dbURL == "" {
 		log.Fatal("DATABASE_URL is not set")
 	}
-	conn, err := pgx.Connect(
+	pool, err := pgxpool.New(
 		context.Background(),
-		dbURL,
+		os.Getenv("DATABASE_URL"),
 	)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer conn.Close(context.Background())
+	defer pool.Close()
+
+	err = pool.Ping(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Println("Connected to PostgreSQL")
 
-	_, err = conn.Exec(
+	_, err = pool.Exec(
 		context.Background(),
 		`
         CREATE TABLE IF NOT EXISTS counter (
@@ -44,7 +49,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = conn.Exec(
+	_, err = pool.Exec(
 		context.Background(),
 		`
         INSERT INTO counter (id, value)
@@ -64,7 +69,7 @@ func main() {
 			//   jika backend belum terhubung ke database
 			// 		count = count + 1
 
-			_, err := conn.Exec(
+			_, err := pool.Exec(
 				context.Background(),
 				"UPDATE counter SET value = value + 1 WHERE id = 1",
 			)
@@ -77,7 +82,7 @@ func main() {
 
 		var count int
 
-		err := conn.QueryRow(
+		err := pool.QueryRow(
 			context.Background(),
 			"SELECT value FROM counter WHERE id = 1",
 		).Scan(&count)
