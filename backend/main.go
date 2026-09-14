@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,14 +12,11 @@ import (
 
 func main() {
 
-	dbURL := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
-	)
+	dbURL := os.Getenv("DATABASE_URL")
+
+	if dbURL == "" {
+		log.Fatal("DATABASE_URL is not set")
+	}
 	conn, err := pgx.Connect(
 		context.Background(),
 		dbURL,
