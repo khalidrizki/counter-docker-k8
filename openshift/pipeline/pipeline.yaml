@@ -15,12 +15,6 @@ spec:
       taskRef:
         name: deploy-postgres
 
-    - name: create-backend-imagestream
-      runAfter:
-        - deploy-postgres
-      taskRef:
-        name: create-backend-imagestream
-
     - name: build-backend
       runAfter:
         - deploy-postgres
@@ -32,12 +26,6 @@ spec:
         - build-backend
       taskRef:
         name: deploy-backend
-
-    - name: create-nginx-imagestream
-      runAfter:
-        - deploy-backend
-      taskRef:
-        name: create-nginx-imagestream
 
     - name: build-nginx
       runAfter:
