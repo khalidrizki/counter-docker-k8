@@ -64,6 +64,8 @@ func main() {
 
 	http.HandleFunc("/api/count", func(w http.ResponseWriter, r *http.Request) {
 
+		log.Printf("Received %s request to /api/count", r.Method)
+
 		if r.Method == "POST" {
 
 			//   jika backend belum terhubung ke database
@@ -75,6 +77,7 @@ func main() {
 			)
 
 			if err != nil {
+				log.Printf("POST database error: %v", err)
 				http.Error(w, "Database error", http.StatusInternalServerError)
 				return
 			}
