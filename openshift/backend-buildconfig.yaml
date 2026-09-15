@@ -1,29 +1,25 @@
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
-  name: nginx
-  
+  name: backend
+
 ---
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
-  name: nginx
+  name: backend
 spec:
   source:
     type: Git
     git:
       uri: https://github.com/khalidrizki/counter-docker-k8.git
-      ref: main
+      ref: operator-connected
+    contextDir: backend
 
   strategy:
     type: Docker
-    dockerStrategy:
-      dockerfilePath: nginx/Dockerfile
 
   output:
     to:
       kind: ImageStreamTag
-      name: nginx:latest
-
-  triggers:
-    - type: ConfigChange
+      name: backend:latest
