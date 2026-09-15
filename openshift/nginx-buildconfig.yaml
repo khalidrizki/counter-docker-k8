@@ -1,9 +1,3 @@
-apiVersion: image.openshift.io/v1
-kind: ImageStream
-metadata:
-  name: nginx
-  
----
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
