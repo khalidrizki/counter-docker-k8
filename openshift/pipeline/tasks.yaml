@@ -1,0 +1,192 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: check-image-registry
+spec:
+  steps:
+    - name: check
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        echo "Checking Image Registry..."
+
+        AVAILABLE=$(oc get clusteroperator image-registry \
+          -o jsonpath='{.status.conditions[?(@.type=="Available")].status}')
+
+        if [ "$AVAILABLE" != "True" ]; then
+          echo "Image Registry is not available."
+          exit 1
+        fi
+
+        echo "Image Registry is available."
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-postgres
+spec:
+  steps:
+    - name: deploy-and-wait
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        echo "Deploying PostgreSQL..."
+        oc apply -f https://raw.githubusercontent.com/khalidrizki/counter-docker-k8/refs/heads/operator-connected/openshift/postgres-cnpg.yaml
+
+        echo "Waiting for PostgreSQL cluster to be ready..."
+        oc wait cluster/cnpg-ha \
+          --for=condition=Ready \
+          --timeout=10m
+
+        echo "PostgreSQL is ready."
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: create-backend-imagestream
+spec:
+  steps:
+    - name: create
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        echo "Creating backend ImageStream..."
+
+        oc create imagestream backend \
+          --dry-run=client -o yaml | oc apply -f -
+
+        echo "Backend ImageStream is ready."
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: build-backend
+spec:
+  steps:
+    - name: apply-buildconfig
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        echo "Creating/updating backend BuildConfig..."
+
+        oc apply -f https://raw.githubusercontent.com/khalidrizki/counter-docker-k8/refs/heads/operator-connected/openshift/backend-buildconfig.yaml
+
+    - name: build
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        echo "Starting backend build..."
+
+        oc start-build backend --wait
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-backend
+spec:
+  steps:
+    - name: deploy
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        oc apply -f https://raw.githubusercontent.com/khalidrizki/counter-docker-k8/refs/heads/operator-connected/openshift/backend.yaml
+
+        echo "Waiting for backend rollout..."
+
+        oc rollout status deployment/backend --timeout=10m
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: create-nginx-imagestream
+spec:
+  steps:
+    - name: create
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        echo "Creating nginx ImageStream..."
+
+        oc create imagestream nginx \
+          --dry-run=client -o yaml | oc apply -f -
+
+        echo "Nginx ImageStream is ready."
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: build-nginx
+spec:
+  steps:
+    - name: apply-buildconfig
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        oc apply -f https://raw.githubusercontent.com/khalidrizki/counter-docker-k8/refs/heads/operator-connected/openshift/nginx-buildconfig.yaml
+
+    - name: build
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        echo "Starting nginx build..."
+
+        oc start-build nginx --wait
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-nginx
+spec:
+  steps:
+    - name: deploy
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        oc apply -f https://raw.githubusercontent.com/khalidrizki/counter-docker-k8/refs/heads/operator-connected/openshift/nginx.yaml
+
+        echo "Waiting for nginx rollout..."
+
+        oc rollout status deployment/nginx --timeout=10m
+
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: get-route
+spec:
+  steps:
+    - name: route
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/usr/bin/env bash
+        set -e
+
+        echo "Application route:"
+        oc get route
