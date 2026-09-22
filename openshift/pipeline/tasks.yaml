@@ -10,6 +10,24 @@ spec:
         #!/usr/bin/env bash
         set -e
 
+        echo "Checking Image Registry configuration..."
+
+        MANAGEMENT_STATE=$(oc get configs.imageregistry.operator.openshift.io cluster \
+          -o jsonpath='{.spec.managementState}')
+
+        if [ "$MANAGEMENT_STATE" != "Managed" ]; then
+          echo "Image Registry is not Managed."
+          exit 1
+        fi
+
+        STORAGE=$(oc get configs.imageregistry.operator.openshift.io cluster \
+          -o jsonpath='{.spec.storage}')
+
+        if [ -z "$STORAGE" ] || [ "$STORAGE" = "{}" ]; then
+          echo "Image Registry storage is not configured."
+          exit 1
+        fi
+
         echo "Checking Image Registry..."
 
         AVAILABLE=$(oc get clusteroperator image-registry \
