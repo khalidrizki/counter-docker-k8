@@ -6,7 +6,7 @@ metadata:
 
 spec:
   instances: 3
-
+  enalbleSuperuserAccess: true
   storage:
     size: 1Gi
     storageClass: ocs-storagecluster-ceph-rbd
