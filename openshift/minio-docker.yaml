@@ -36,7 +36,7 @@ spec:
     spec:
       containers:
         - name: minio
-          image: docker.io/minio/minio:latest
+          image: quay.io/minio/aistor/minio:RELEASE.2026-03-26T21-24-40Z
           command:
             - minio
             - server
