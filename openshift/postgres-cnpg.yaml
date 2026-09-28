@@ -1,12 +1,25 @@
+
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
-
 metadata:
   name: cnpg-ha
-
+  namespace: counter-operator
 spec:
   instances: 3
   enableSuperuserAccess: true
+  enablePDB: true
   storage:
     size: 1Gi
     storageClass: ocs-storagecluster-ceph-rbd
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+      encoding: UTF8
+      localeCType: C
+      localeCollate: C
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: rustfs-store
