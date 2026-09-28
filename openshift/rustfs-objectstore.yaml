@@ -1,0 +1,18 @@
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: rustfs-store
+  namespace: counter-operator
+spec:
+  configuration:
+    destinationPath: s3://backups/
+    endpointURL: http://rustfs:9000
+    s3Credentials:
+      accessKeyId:
+        name: rustfs
+        key: RUSTFS_ACCESS_KEY
+      secretAccessKey:
+        name: rustfs
+        key: RUSTFS_SECRET_KEY
+    wal:
+      compression: gzip
